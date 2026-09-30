@@ -2,7 +2,7 @@
 
 A Flutter plugin for iOS and Android to handle incoming shared text/media, as well as add share to suggestions/shortcuts.
 
-Maintained fork of [share_handler](https://pub.dev/packages/share_handler), originally created by [Shout](https://github.com/AboutShout/share_handler) (Micro Enterprise Technologies LLC DBA Shout). Shipped as a single package with UIScene support, Swift Package Manager support and fixes for share delivery (including cold starts from the iOS share extension).
+Maintained fork of [share_handler](https://pub.dev/packages/share_handler), originally created by [Shout](https://github.com/AboutShout/share_handler). Shipped as a single package with UIScene support, Swift Package Manager support and fixes for share delivery (including cold starts from the iOS share extension).
 
 ## Migrating from share_handler
 
@@ -364,7 +364,7 @@ class _MyAppState extends State<MyApp> {
 
 ## Attributions
 
-`better_share_handler` is a fork of [share_handler](https://github.com/AboutShout/share_handler) by Shout (Micro Enterprise Technologies LLC DBA Shout), released under the MIT License. Thanks to the original authors and contributors.
+`better_share_handler` is a fork of [share_handler](https://github.com/AboutShout/share_handler) by [Shout](https://github.com/AboutShout), released under the MIT License. Thanks to the original authors and contributors.
 
 From the original README:
 
