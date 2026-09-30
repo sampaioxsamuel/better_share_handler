@@ -444,7 +444,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
-				CUSTOM_GROUP_ID = group.io.github.sampaioxsamuel.betterShareHandlerExample;
+				CUSTOM_GROUP_ID = group.bettersharehandler;
 				DEVELOPMENT_TEAM = D8KT4LST72;
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = Runner/Info.plist;
@@ -472,7 +472,7 @@
 				CODE_SIGN_ENTITLEMENTS = ShareExtension/ShareExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				CUSTOM_GROUP_ID = group.io.github.sampaioxsamuel.betterShareHandlerExample;
+				CUSTOM_GROUP_ID = group.bettersharehandler;
 				DEVELOPMENT_TEAM = D8KT4LST72;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -510,7 +510,7 @@
 				CODE_SIGN_ENTITLEMENTS = ShareExtension/ShareExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				CUSTOM_GROUP_ID = group.io.github.sampaioxsamuel.betterShareHandlerExample;
+				CUSTOM_GROUP_ID = group.bettersharehandler;
 				DEVELOPMENT_TEAM = D8KT4LST72;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -545,7 +545,7 @@
 				CODE_SIGN_ENTITLEMENTS = ShareExtension/ShareExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				CUSTOM_GROUP_ID = group.io.github.sampaioxsamuel.betterShareHandlerExample;
+				CUSTOM_GROUP_ID = group.bettersharehandler;
 				DEVELOPMENT_TEAM = D8KT4LST72;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -686,7 +686,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
-				CUSTOM_GROUP_ID = group.io.github.sampaioxsamuel.betterShareHandlerExample;
+				CUSTOM_GROUP_ID = group.bettersharehandler;
 				DEVELOPMENT_TEAM = D8KT4LST72;
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = Runner/Info.plist;
@@ -714,7 +714,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
-				CUSTOM_GROUP_ID = group.io.github.sampaioxsamuel.betterShareHandlerExample;
+				CUSTOM_GROUP_ID = group.bettersharehandler;
 				DEVELOPMENT_TEAM = D8KT4LST72;
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = Runner/Info.plist;
