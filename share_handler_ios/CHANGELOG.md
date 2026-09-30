@@ -7,6 +7,7 @@ Await message donation and report failures to Dart
 Validate callback URLs and only finish the extension after opening the host app
 Keep initial shares out of the live stream and buffer live events until listening
 Use one-time callback keys and consume extension payloads after opening the host
+Don't cancel the share when App Group `synchronize()` returns false on device
 # 0.0.15
 Fix for iOS 18
 Fix getFileName function to handle duplicate filenames

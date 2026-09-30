@@ -293,10 +293,9 @@ open class ShareHandlerIosViewController: UIViewController {
             return
         }
         userDefaults.set(json, forKey: sharedKey)
-        guard userDefaults.synchronize() else {
-            dismissWithError()
-            return
-        }
+        // synchronize() can return false inside extensions even when the write
+        // succeeded, so its result must not abort the share.
+        userDefaults.synchronize()
 
         while (responder != nil) {
             if let application = responder as? UIApplication {
