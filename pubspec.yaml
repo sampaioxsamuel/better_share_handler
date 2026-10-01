@@ -1,8 +1,8 @@
 name: better_share_handler
 description: Handle text, images, videos and files shared to your Flutter app from other apps on iOS and Android, and add share suggestions/shortcuts.
 version: 1.1.0
-repository: https://github.com/sampaioxsamuel/share_handler
-issue_tracker: https://github.com/sampaioxsamuel/share_handler/issues
+repository: https://github.com/sampaioxsamuel/better_share_handler
+issue_tracker: https://github.com/sampaioxsamuel/better_share_handler/issues
 topics:
   - share
   - share-extension

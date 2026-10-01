@@ -3,7 +3,7 @@ Pod::Spec.new do |s|
   s.version          = '1.1.0'
   s.summary          = 'Handle content shared to your Flutter app on iOS.'
   s.description      = 'iOS implementation of the better_share_handler Flutter plugin.'
-  s.homepage         = 'https://github.com/sampaioxsamuel/share_handler'
+  s.homepage         = 'https://github.com/sampaioxsamuel/better_share_handler'
   s.license          = { :file => '../LICENSE' }
   s.author           = { 'Samuel' => 'sampaioxsamuel@gmail.com' }
   s.source           = { :path => '.' }

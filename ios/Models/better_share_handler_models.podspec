@@ -3,7 +3,7 @@ Pod::Spec.new do |s|
   s.version          = '1.1.0'
   s.summary          = 'Share extension code for the better_share_handler plugin.'
   s.description      = 'Shared code so the Runner and Share Extension targets can both use better_share_handler.'
-  s.homepage         = 'https://github.com/sampaioxsamuel/share_handler'
+  s.homepage         = 'https://github.com/sampaioxsamuel/better_share_handler'
   s.license          = { :file => '../../LICENSE' }
   s.author           = { 'Samuel' => 'sampaioxsamuel@gmail.com' }
   s.source           = { :path => '.' }
