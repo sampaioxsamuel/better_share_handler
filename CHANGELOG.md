@@ -12,7 +12,7 @@ Direct share suggestions now follow the platform guidelines and can be managed f
 
 # 1.0.0
 
-First release of `better_share_handler`, a maintained fork of `share_handler` 0.0.26 by Shout (https://github.com/AboutShout/share_handler) published as a single package.
+First release of `better_share_handler`, a maintained fork of `share_handler` 0.0.25 by Shout (https://github.com/AboutShout/share_handler) published as a single package.
 
 - Android and iOS implementations merged into one package (no federated sub-packages)
 - iOS share extension module renamed to `better_share_handler_models`
