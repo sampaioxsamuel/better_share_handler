@@ -8,7 +8,6 @@ Receive text, URLs, images, videos and files shared to your Flutter app from oth
 
 ## What's improved over share_handler
 
-- **Shares work on real iOS devices.** Fixes the share extension cancelling every share on device (the app flashed and never opened), caused by `UserDefaults.synchronize()` returning `false` inside extensions.
 - **Reliable delivery.** The share that launched the app arrives once through `getInitialSharedMedia()`; shares received while the app runs arrive through `sharedMediaStream`, buffered until you start listening. No duplicates between the two.
 - **Safer iOS hand-off.** Callback URLs are validated, each share uses a one-time key, and the extension only finishes after the host app actually opened.
 - **Safer Android staging.** Attachments are staged atomically and queued events are bounded.
