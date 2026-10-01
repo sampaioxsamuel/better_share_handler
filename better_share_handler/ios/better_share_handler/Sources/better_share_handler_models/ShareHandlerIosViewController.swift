@@ -341,8 +341,11 @@ open class ShareHandlerIosViewController: UIViewController {
     }
 
     func getFileName(from url: URL, type: SharedAttachmentType) -> String {
+        // The name comes from the sending app: never let it act as a path.
         var name = url.lastPathComponent
-        if (name.isEmpty) {
+            .replacingOccurrences(of: "/", with: "_")
+            .replacingOccurrences(of: "\0", with: "_")
+        if (name.isEmpty || name == "." || name == "..") {
             name = UUID().uuidString + "." + getExtension(from: url, type: type)
         }
         if let count = fileNameCounter[name] {

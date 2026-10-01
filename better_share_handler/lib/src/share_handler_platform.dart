@@ -33,14 +33,53 @@ abstract class ShareHandlerPlatform extends PlatformInterface {
     throw UnimplementedError('getInitialSharedMedia has not been implemented.');
   }
 
-  /// Records a sent message so the share menu can suggest recipients/conversations to share to.
+  /// Records that the user sent a message to a conversation in your app, so
+  /// the system share sheet can suggest it as a direct share target.
+  ///
+  /// [conversationIdentifier] is your own stable id for the conversation (a
+  /// chat, group, channel...); it is returned as
+  /// [SharedMedia.conversationIdentifier] when the user shares to the
+  /// suggestion. Never reuse an id for a different conversation.
+  /// [conversationImageFilePath] is a local image file used as the avatar.
+  /// Set [isGroup] for group conversations (used by Android for ranking).
+  ///
+  /// Call it only when a message is actually sent; the system ranks
+  /// suggestions by real usage.
   Future<void> recordSentMessage({
     required String conversationIdentifier,
     required String conversationName,
     String? conversationImageFilePath,
     String? serviceName,
+    bool isGroup = false,
   }) {
     throw UnimplementedError('recordSentMessage has not been implemented.');
+  }
+
+  /// Records that the user received a message in a conversation, which also
+  /// improves its ranking as a share suggestion. See [recordSentMessage].
+  Future<void> recordReceivedMessage({
+    required String conversationIdentifier,
+    required String conversationName,
+    String? conversationImageFilePath,
+    String? serviceName,
+    bool isGroup = false,
+  }) {
+    throw UnimplementedError('recordReceivedMessage has not been implemented.');
+  }
+
+  /// Removes conversations from the share suggestions, for example after the
+  /// user leaves a group or deletes a chat.
+  ///
+  /// On iOS, only conversations recorded with better_share_handler 1.1.0 or
+  /// later can be removed by id; use [removeAllConversations] for older ones.
+  Future<void> removeConversations(List<String> conversationIdentifiers) {
+    throw UnimplementedError('removeConversations has not been implemented.');
+  }
+
+  /// Removes every conversation this app registered as a share suggestion,
+  /// for example on logout.
+  Future<void> removeAllConversations() {
+    throw UnimplementedError('removeAllConversations has not been implemented.');
   }
 
   /// Resets the initial shared media to null to prevent duplicate handling.

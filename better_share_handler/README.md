@@ -328,24 +328,47 @@ Attachment paths point to staging files. Use them right away, or copy them to yo
 
 ### Direct share suggestions
 
-Record a conversation so the system share sheet can suggest it as a target:
+Direct share suggestions are the conversations shown at the top of the system share sheet. When the user picks one, your app opens with the shared content and the conversation already selected, so they don't have to search for it.
+
+They work with your app's own conversations: no device contacts are needed. Typical use: a chat app with 1:1 chats and groups.
+
+Record a conversation whenever the user sends or receives a message in it:
 
 ```dart
 await ShareHandler.instance.recordSentMessage(
-  conversationIdentifier: 'conversation-42',
-  conversationName: 'John Doe',
-  conversationImageFilePath: '/path/to/avatar.png', // optional
-  serviceName: 'my-service', // optional
+  conversationIdentifier: 'group-42', // your stable id, never reused
+  conversationName: 'Project team',
+  conversationImageFilePath: '/path/to/avatar.png', // optional, local file
+  isGroup: true,
+);
+
+await ShareHandler.instance.recordReceivedMessage(
+  conversationIdentifier: 'chat-7',
+  conversationName: 'Maria',
 );
 ```
 
-When the user shares to that suggestion, `SharedMedia.conversationIdentifier` carries the identifier.
+When the user shares to a suggestion, `SharedMedia.conversationIdentifier` carries the id, so you can open that conversation directly.
+
+Remove conversations that no longer exist, and clear everything on logout:
+
+```dart
+await ShareHandler.instance.removeConversations(['group-42']);
+await ShareHandler.instance.removeAllConversations();
+```
+
+Notes:
+
+- The system decides whether and where a suggestion appears, ranking by real usage. Record only real messages, not every conversation at once.
+- iOS needs `INSendMessageIntent` in `NSUserActivityTypes` (Runner) and in `IntentsSupported` (ShareExtension), as shown in the iOS setup. Android needs `share_targets.xml` and the shortcut `meta-data`.
+- Android shows a limited number of suggestions; the least recent ones are evicted automatically. Conversations inactive for 30 days are considered stale.
+- On iOS, conversations recorded before 1.1.0 can only be removed with `removeAllConversations()`.
 
 A complete app is available in [`example/`](example).
 
 ## Migrating from share_handler
 
-1. In `pubspec.yaml`, replace `share_handler` with `better_share_handler: ^1.0.0`. Remove any direct dependency on `share_handler_ios`, `share_handler_android` or `share_handler_platform_interface`.
+1. In `pubspec.yaml`, replace `share_handler` with `better_share_handler: ^1.1.0`. Remove any direct dependency on `share_handler_ios`, `share_handler_android` or `share_handler_platform_interface`.
 2. Replace `package:share_handler/share_handler.dart` imports with `package:better_share_handler/better_share_handler.dart`.
 3. In `ios/ShareExtension/ShareViewController.swift`, replace `import share_handler_ios_models` with `import better_share_handler_models`.
 4. **CocoaPods:** in the `ShareExtension` target of your `Podfile`, replace the `share_handler_ios_models` pod with the one in [iOS step 5](#5-link-the-extension-module), then run `pod install`.

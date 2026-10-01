@@ -7,6 +7,7 @@ import better_share_handler_models
 public class BetterShareHandlerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, ShareHandlerApi, FlutterSceneLifeCycleDelegate {
 
     static let kEventsChannel = "better_share_handler/sharedMediaStream"
+    static let kConversationsChannel = "better_share_handler/conversations"
 
     private var customSchemePrefix = "ShareMedia"
     private let sharedKeyPrefix = "ShareKey-"
@@ -29,6 +30,9 @@ public class BetterShareHandlerPlugin: NSObject, FlutterPlugin, FlutterStreamHan
 
         let eventsChannel = FlutterEventChannel(name: kEventsChannel, binaryMessenger: messenger)
         eventsChannel.setStreamHandler(instance)
+
+        let conversationsChannel = FlutterMethodChannel(name: kConversationsChannel, binaryMessenger: messenger)
+        conversationsChannel.setMethodCallHandler(instance.handleConversationsCall)
 
         registrar.addApplicationDelegate(instance)
         registrar.addSceneDelegate(instance)
@@ -253,41 +257,98 @@ public class BetterShareHandlerPlugin: NSObject, FlutterPlugin, FlutterStreamHan
         return sharedMedia
     }
 
-    func recordSentMessage(_ media: SharedMedia?, completion: @escaping (FlutterError?) -> Void) {
-        guard let media else {
-            completion(FlutterError(
-                code: "NATIVE_ERR",
-                message: "Error: decoding SharedMedia",
-                details: nil
-            ))
-            return
+    private func handleConversationsCall(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
+        let args = call.arguments as? [String: Any] ?? [:]
+        switch call.method {
+        case "recordMessage":
+            guard let conversationIdentifier = args["conversationIdentifier"] as? String, !conversationIdentifier.isEmpty,
+                  let conversationName = args["conversationName"] as? String else {
+                result(FlutterError(code: "INVALID_ARGUMENT", message: "conversationIdentifier and conversationName are required", details: nil))
+                return
+            }
+            recordMessage(
+                conversationIdentifier: conversationIdentifier,
+                conversationName: conversationName,
+                imageFilePath: args["imageFilePath"] as? String,
+                serviceName: args["serviceName"] as? String,
+                incoming: args["incoming"] as? Bool ?? false,
+                completion: completion(result, "donating INSendMessageIntent")
+            )
+        case "removeConversations":
+            let identifiers = args["conversationIdentifiers"] as? [String] ?? []
+            removeConversations(identifiers, completion: completion(result, "deleting interactions"))
+        case "removeAllConversations":
+            INInteraction.deleteAll(completion: completion(result, "deleting interactions"))
+        default:
+            result(FlutterMethodNotImplemented)
         }
+    }
 
-        let groupName = INSpeakableString(spokenPhrase: media.speakableGroupName ?? "Unknown Contact")
-        let sendMessageIntent = INSendMessageIntent(recipients: nil, outgoingMessageType: .outgoingMessageText, content: nil, speakableGroupName: groupName, conversationIdentifier: media.conversationIdentifier, serviceName: media.serviceName, sender: nil, attachments: nil)
+    private func completion(_ result: @escaping FlutterResult, _ action: String) -> (Error?) -> Void {
+        return { error in
+            DispatchQueue.main.async {
+                guard let error else {
+                    result(nil)
+                    return
+                }
+                let nativeError = error as NSError
+                result(FlutterError(
+                    code: "NATIVE_ERR",
+                    message: "Error: \(action)",
+                    details: [
+                        "domain": nativeError.domain,
+                        "code": nativeError.code,
+                        "message": nativeError.localizedDescription,
+                    ]
+                ))
+            }
+        }
+    }
 
-        if let imagePath = media.imageFilePath {
-            let imageUrl = URL(fileURLWithPath: imagePath)
-            let image = INImage(url: imageUrl)
-            sendMessageIntent.setImage(image, forParameterNamed: \.speakableGroupName)
+    // Donates an INSendMessageIntent so the share sheet can suggest the
+    // conversation. The group identifier lets removeConversations delete it.
+    private func recordMessage(
+        conversationIdentifier: String,
+        conversationName: String,
+        imageFilePath: String?,
+        serviceName: String?,
+        incoming: Bool,
+        completion: @escaping (Error?) -> Void
+    ) {
+        let groupName = INSpeakableString(spokenPhrase: conversationName)
+        let sendMessageIntent = INSendMessageIntent(recipients: nil, outgoingMessageType: .outgoingMessageText, content: nil, speakableGroupName: groupName, conversationIdentifier: conversationIdentifier, serviceName: serviceName, sender: nil, attachments: nil)
+
+        if let imageFilePath, let imageData = FileManager.default.contents(atPath: imageFilePath) {
+            sendMessageIntent.setImage(INImage(imageData: imageData), forParameterNamed: \.speakableGroupName)
         }
 
         let interaction = INInteraction(intent: sendMessageIntent, response: nil)
-        interaction.donate { error in
-            guard let error else {
-                completion(nil)
-                return
+        interaction.direction = incoming ? .incoming : .outgoing
+        interaction.groupIdentifier = conversationIdentifier
+        interaction.donate(completion: completion)
+    }
+
+    private func removeConversations(_ identifiers: [String], completion: @escaping (Error?) -> Void) {
+        guard !identifiers.isEmpty else {
+            completion(nil)
+            return
+        }
+        let group = DispatchGroup()
+        let lock = NSLock()
+        var firstError: Error?
+        for identifier in identifiers {
+            group.enter()
+            INInteraction.delete(with: identifier) { error in
+                if let error {
+                    lock.lock()
+                    if firstError == nil { firstError = error }
+                    lock.unlock()
+                }
+                group.leave()
             }
-            let nativeError = error as NSError
-            completion(FlutterError(
-                code: "NATIVE_ERR",
-                message: "Error: donating INSendMessageIntent",
-                details: [
-                    "domain": nativeError.domain,
-                    "code": nativeError.code,
-                    "message": nativeError.localizedDescription,
-                ]
-            ))
+        }
+        group.notify(queue: .main) {
+            completion(firstError)
         }
     }
 

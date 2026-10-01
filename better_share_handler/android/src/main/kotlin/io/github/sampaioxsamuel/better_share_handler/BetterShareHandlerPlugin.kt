@@ -3,7 +3,10 @@ package io.github.sampaioxsamuel.better_share_handler
 import android.content.ContentResolver
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Canvas
+import android.graphics.Rect
 import android.net.Uri
 import android.os.Build
 import android.os.Handler
@@ -35,6 +38,7 @@ import java.util.concurrent.Future
 import java.util.concurrent.RejectedExecutionException
 
 private const val kEventsChannel = "better_share_handler/sharedMediaStream"
+private const val kConversationsChannel = "better_share_handler/conversations"
 private const val kMaxShareBytes = 2L * 1024L * 1024L * 1024L
 private const val kMaxCacheBytes = 4L * 1024L * 1024L * 1024L
 private const val kMaxAttachmentsPerShare = 128
@@ -48,11 +52,12 @@ private val kCleanupExecutor = Executors.newSingleThreadExecutor()
 
 /** ShareHandlerPlugin */
 class BetterShareHandlerPlugin : FlutterPlugin, Messages.ShareHandlerApi, EventChannel.StreamHandler, ActivityAware,
-  PluginRegistry.NewIntentListener {
+  PluginRegistry.NewIntentListener, MethodChannel.MethodCallHandler {
   private var initialMedia: Messages.SharedMedia? = null
   private var initialMediaWasDelivered = false
   private var initialError: Throwable? = null
   private var eventChannel: EventChannel? = null
+  private var conversationsChannel: MethodChannel? = null
   private var eventSink: EventChannel.EventSink? = null
 
   private var binding: ActivityPluginBinding? = null
@@ -86,6 +91,9 @@ class BetterShareHandlerPlugin : FlutterPlugin, Messages.ShareHandlerApi, EventC
 
     eventChannel = EventChannel(messenger, kEventsChannel)
     eventChannel?.setStreamHandler(this)
+
+    conversationsChannel = MethodChannel(messenger, kConversationsChannel)
+    conversationsChannel?.setMethodCallHandler(this)
   }
 
   override fun onDetachedFromEngine(@NonNull binding: FlutterPlugin.FlutterPluginBinding) {
@@ -94,6 +102,8 @@ class BetterShareHandlerPlugin : FlutterPlugin, Messages.ShareHandlerApi, EventC
     this.binding = null
     eventChannel?.setStreamHandler(null)
     eventChannel = null
+    conversationsChannel?.setMethodCallHandler(null)
+    conversationsChannel = null
     eventSink = null
     if (initialMediaWasDelivered) {
       unprotectMediaFiles(initialMedia)
@@ -119,40 +129,6 @@ class BetterShareHandlerPlugin : FlutterPlugin, Messages.ShareHandlerApi, EventC
     pendingInitialResults.clear()
   }
 
-//  override fun getInitialSharedMedia(result: Result<SharedMedia>?) {
-//    result?.let { _result -> {
-//      initialMedia?.let { _media -> _result.success(_media) }
-//    } }
-//  }
-
-//  override fun recordSentMessage(media: SharedMedia) {
-//    val packageName = applicationContext.packageName
-//    val shortcutTarget = "$packageName.dynamic_share_target"
-//    val shortcutBuilder = ShortcutInfoCompat.Builder(applicationContext, media.conversationIdentifier ?: "").setShortLabel(media.speakableGroupName ?: "Unknown")
-//      .setIsConversation()
-//      .setCategories(setOf(shortcutTarget))
-//      .setIntent(Intent(Intent.ACTION_DEFAULT))
-//      .setLongLived(true)
-//
-//    val personBuilder = Person.Builder()
-//      .setKey(media.conversationIdentifier)
-//      .setName(media.speakableGroupName)
-//
-//    media.imageFilePath?.let {
-//      val bitmap = BitmapFactory.decodeFile(it)
-//      val icon = IconCompat.createWithAdaptiveBitmap(bitmap)
-//      shortcutBuilder.setIcon(icon)
-//      personBuilder.setIcon(icon)
-//    }
-//
-//    val person = personBuilder.build()
-//    shortcutBuilder.setPerson(person)
-//
-//    val shortcut = shortcutBuilder.build()
-//
-//    ShortcutManagerCompat.addDynamicShortcuts(applicationContext, listOf(shortcut))
-//  }
-
   override fun getInitialSharedMedia(result: Messages.Result<Messages.SharedMedia>?) {
     if (result == null) return
     if (!hasAttachedToActivity) {
@@ -177,40 +153,112 @@ class BetterShareHandlerPlugin : FlutterPlugin, Messages.ShareHandlerApi, EventC
     }
   }
 
-  override fun recordSentMessage(media: Messages.SharedMedia) {
+  override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
+    try {
+      when (call.method) {
+        "recordMessage" -> {
+          val conversationIdentifier = call.argument<String>("conversationIdentifier")
+          val conversationName = call.argument<String>("conversationName")
+          if (conversationIdentifier.isNullOrEmpty() || conversationName == null) {
+            result.error("INVALID_ARGUMENT", "conversationIdentifier and conversationName are required", null)
+            return
+          }
+          recordMessage(
+            conversationIdentifier,
+            conversationName,
+            call.argument<String>("imageFilePath"),
+            call.argument<Boolean>("isGroup") ?: false,
+            call.argument<Boolean>("incoming") ?: false,
+          )
+          result.success(null)
+        }
+        "removeConversations" -> {
+          val ids = call.argument<List<String>>("conversationIdentifiers") ?: emptyList()
+          if (ids.isNotEmpty()) {
+            ShortcutManagerCompat.removeLongLivedShortcuts(applicationContext, ids)
+          }
+          result.success(null)
+        }
+        "removeAllConversations" -> {
+          val ids = ShortcutManagerCompat.getShortcuts(
+            applicationContext,
+            ShortcutManagerCompat.FLAG_MATCH_DYNAMIC or ShortcutManagerCompat.FLAG_MATCH_CACHED,
+          ).filter { it.categories?.contains(shareTargetCategory()) == true }.map { it.id }
+          if (ids.isNotEmpty()) {
+            ShortcutManagerCompat.removeLongLivedShortcuts(applicationContext, ids)
+          }
+          result.success(null)
+        }
+        else -> result.notImplemented()
+      }
+    } catch (e: Exception) {
+      result.error("NATIVE_ERR", e.message, e.toString())
+    }
+  }
+
+  private fun shareTargetCategory() = "${applicationContext.packageName}.dynamic_share_target"
+
+  // Publishes a long-lived conversation shortcut so it can be suggested as a
+  // Direct Share target. Pushing it again reports usage for ranking.
+  private fun recordMessage(
+    conversationIdentifier: String,
+    conversationName: String,
+    imageFilePath: String?,
+    isGroup: Boolean,
+    incoming: Boolean,
+  ) {
     val packageName = applicationContext.packageName
     val intent = applicationContext.packageManager.getLaunchIntentForPackage(packageName)?.apply {
       action = Intent.ACTION_SEND
-      putExtra("conversationIdentifier", media.conversationIdentifier)
-    } ?: run {
-      Log.e("ShareHandler", "Unable to find launch activity for $packageName")
-      return
-    }
-    val shortcutTarget = "$packageName.dynamic_share_target"
-    val shortcutBuilder = ShortcutInfoCompat.Builder(applicationContext, media.conversationIdentifier ?: "")
-      .setShortLabel(media.speakableGroupName ?: "Unknown")
+      putExtra("conversationIdentifier", conversationIdentifier)
+    } ?: throw IllegalStateException("Unable to find launch activity for $packageName")
+
+    val capability = if (incoming) "actions.intent.RECEIVE_MESSAGE" else "actions.intent.SEND_MESSAGE"
+    val shortcutBuilder = ShortcutInfoCompat.Builder(applicationContext, conversationIdentifier)
+      .setShortLabel(conversationName)
+      .setLongLabel(conversationName)
       .setIsConversation()
-      .setCategories(setOf(shortcutTarget))
+      .setCategories(setOf(shareTargetCategory()))
       .setIntent(intent)
       .setLongLived(true)
-
-    val personBuilder = Person.Builder()
-      .setKey(media.conversationIdentifier)
-      .setName(media.speakableGroupName)
-
-    media.imageFilePath?.let {
-      val bitmap = BitmapFactory.decodeFile(it)
-      val icon = IconCompat.createWithAdaptiveBitmap(bitmap)
-      shortcutBuilder.setIcon(icon)
-      personBuilder.setIcon(icon)
+    if (isGroup) {
+      shortcutBuilder.addCapabilityBinding(capability, "message.recipient.@type", listOf("Audience"))
+    } else {
+      shortcutBuilder.addCapabilityBinding(capability)
     }
 
-    val person = personBuilder.build()
-    shortcutBuilder.setPerson(person)
+    val icon = imageFilePath?.let { path ->
+      BitmapFactory.decodeFile(path)?.let { IconCompat.createWithAdaptiveBitmap(adaptiveBitmap(it)) }
+    }
+    icon?.let { shortcutBuilder.setIcon(it) }
 
-    val shortcut = shortcutBuilder.build()
+    if (!isGroup) {
+      val personBuilder = Person.Builder()
+        .setKey(conversationIdentifier)
+        .setName(conversationName)
+      icon?.let { personBuilder.setIcon(it) }
+      shortcutBuilder.setPerson(personBuilder.build())
+    }
 
-    ShortcutManagerCompat.addDynamicShortcuts(applicationContext, listOf(shortcut))
+    ShortcutManagerCompat.pushDynamicShortcut(applicationContext, shortcutBuilder.build())
+  }
+
+  // Adaptive icons mask the outer third of the canvas, so the avatar is scaled
+  // to the 72dp safe zone centered in a 108dp canvas.
+  private fun adaptiveBitmap(source: Bitmap): Bitmap {
+    val side = minOf(source.width, source.height)
+    val canvasSize = side * 108 / 72
+    val output = Bitmap.createBitmap(canvasSize, canvasSize, Bitmap.Config.ARGB_8888)
+    val left = (source.width - side) / 2
+    val top = (source.height - side) / 2
+    val offset = (canvasSize - side) / 2
+    Canvas(output).drawBitmap(
+      source,
+      Rect(left, top, left + side, top + side),
+      Rect(offset, offset, offset + side, offset + side),
+      null,
+    )
+    return output
   }
 
   override fun resetInitialSharedMedia() {

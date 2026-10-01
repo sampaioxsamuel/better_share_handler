@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name             = 'better_share_handler_models'
-  s.version          = '1.0.0'
+  s.version          = '1.1.0'
   s.summary          = 'Share extension code for the better_share_handler plugin.'
   s.description      = 'Shared code so the Runner and Share Extension targets can both use better_share_handler.'
   s.homepage         = 'https://github.com/sampaioxsamuel/share_handler'

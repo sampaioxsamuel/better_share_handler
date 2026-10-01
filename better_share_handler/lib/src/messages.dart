@@ -189,28 +189,6 @@ class ShareHandlerApi {
     }
   }
 
-  Future<void> recordSentMessage(SharedMedia argMedia) async {
-    final BasicMessageChannel<Object?> channel = BasicMessageChannel<Object?>(
-        'dev.flutter.pigeon.ShareHandlerApi.recordSentMessage', codec,
-        binaryMessenger: _binaryMessenger);
-    final Map<Object?, Object?>? replyMap = await channel.send(<Object?>[argMedia]) as Map<Object?, Object?>?;
-    if (replyMap == null) {
-      throw PlatformException(
-        code: 'channel-error',
-        message: 'Unable to establish connection on channel.',
-      );
-    } else if (replyMap['error'] != null) {
-      final Map<Object?, Object?> error = (replyMap['error'] as Map<Object?, Object?>?)!;
-      throw PlatformException(
-        code: (error['code'] as String?)!,
-        message: error['message'] as String?,
-        details: error['details'],
-      );
-    } else {
-      return;
-    }
-  }
-
   Future<void> resetInitialSharedMedia() async {
     final BasicMessageChannel<Object?> channel = BasicMessageChannel<Object?>(
         'dev.flutter.pigeon.ShareHandlerApi.resetInitialSharedMedia', codec,

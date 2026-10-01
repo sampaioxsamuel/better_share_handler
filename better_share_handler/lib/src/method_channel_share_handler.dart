@@ -19,6 +19,8 @@ class MethodChannelShareHandler extends ShareHandlerPlatform {
   final ShareHandlerApi _api = ShareHandlerApi();
   static const EventChannel eventChannel =
       EventChannel("better_share_handler/sharedMediaStream");
+  static const MethodChannel conversationsChannel =
+      MethodChannel("better_share_handler/conversations");
   static Stream<SharedMedia>? _sharedMediaStream;
 
   @override
@@ -33,13 +35,64 @@ class MethodChannelShareHandler extends ShareHandlerPlatform {
     required String conversationName,
     String? conversationImageFilePath,
     String? serviceName,
+    bool isGroup = false,
   }) {
-    return _api.recordSentMessage(SharedMedia(
+    return _recordMessage(
       conversationIdentifier: conversationIdentifier,
-      speakableGroupName: conversationName,
+      conversationName: conversationName,
+      conversationImageFilePath: conversationImageFilePath,
       serviceName: serviceName,
-      imageFilePath: conversationImageFilePath,
-    ));
+      isGroup: isGroup,
+      incoming: false,
+    );
+  }
+
+  @override
+  Future<void> recordReceivedMessage({
+    required String conversationIdentifier,
+    required String conversationName,
+    String? conversationImageFilePath,
+    String? serviceName,
+    bool isGroup = false,
+  }) {
+    return _recordMessage(
+      conversationIdentifier: conversationIdentifier,
+      conversationName: conversationName,
+      conversationImageFilePath: conversationImageFilePath,
+      serviceName: serviceName,
+      isGroup: isGroup,
+      incoming: true,
+    );
+  }
+
+  Future<void> _recordMessage({
+    required String conversationIdentifier,
+    required String conversationName,
+    required String? conversationImageFilePath,
+    required String? serviceName,
+    required bool isGroup,
+    required bool incoming,
+  }) {
+    return conversationsChannel.invokeMethod<void>('recordMessage', <String, Object?>{
+      'conversationIdentifier': conversationIdentifier,
+      'conversationName': conversationName,
+      'imageFilePath': conversationImageFilePath,
+      'serviceName': serviceName,
+      'isGroup': isGroup,
+      'incoming': incoming,
+    });
+  }
+
+  @override
+  Future<void> removeConversations(List<String> conversationIdentifiers) {
+    return conversationsChannel.invokeMethod<void>('removeConversations', <String, Object?>{
+      'conversationIdentifiers': conversationIdentifiers,
+    });
+  }
+
+  @override
+  Future<void> removeAllConversations() {
+    return conversationsChannel.invokeMethod<void>('removeAllConversations');
   }
 
   @override

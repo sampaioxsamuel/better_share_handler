@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name             = 'better_share_handler'
-  s.version          = '1.0.0'
+  s.version          = '1.1.0'
   s.summary          = 'Handle content shared to your Flutter app on iOS.'
   s.description      = 'iOS implementation of the better_share_handler Flutter plugin.'
   s.homepage         = 'https://github.com/sampaioxsamuel/share_handler'

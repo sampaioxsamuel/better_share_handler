@@ -268,7 +268,6 @@ public class Messages {
   /** Generated interface from Pigeon that represents a handler of messages from Flutter.*/
   public interface ShareHandlerApi {
     void getInitialSharedMedia(Result<SharedMedia> result);
-    void recordSentMessage(@NonNull SharedMedia media);
     void resetInitialSharedMedia();
 
     /** The codec used by ShareHandlerApi. */
@@ -302,30 +301,6 @@ public class Messages {
               wrapped.put("error", wrapError(exception));
               reply.reply(wrapped);
             }
-          });
-        } else {
-          channel.setMessageHandler(null);
-        }
-      }
-      {
-        BasicMessageChannel<Object> channel =
-            new BasicMessageChannel<>(binaryMessenger, "dev.flutter.pigeon.ShareHandlerApi.recordSentMessage", getCodec());
-        if (api != null) {
-          channel.setMessageHandler((message, reply) -> {
-            Map<String, Object> wrapped = new HashMap<>();
-            try {
-              ArrayList<Object> args = (ArrayList<Object>)message;
-              SharedMedia mediaArg = (SharedMedia)args.get(0);
-              if (mediaArg == null) {
-                throw new NullPointerException("mediaArg unexpectedly null.");
-              }
-              api.recordSentMessage(mediaArg);
-              wrapped.put("result", null);
-            }
-            catch (Error | RuntimeException exception) {
-              wrapped.put("error", wrapError(exception));
-            }
-            reply.reply(wrapped);
           });
         } else {
           channel.setMessageHandler(null);
