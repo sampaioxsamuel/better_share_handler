@@ -17,10 +17,12 @@ import 'share_handler_platform.dart';
 /// to your Flutter app through MethodChannels (Android and iOS platforms).
 class MethodChannelShareHandler extends ShareHandlerPlatform {
   final ShareHandlerApi _api = ShareHandlerApi();
-  static const EventChannel eventChannel =
-      EventChannel("better_share_handler/sharedMediaStream");
-  static const MethodChannel conversationsChannel =
-      MethodChannel("better_share_handler/conversations");
+  static const EventChannel eventChannel = EventChannel(
+    "better_share_handler/sharedMediaStream",
+  );
+  static const MethodChannel conversationsChannel = MethodChannel(
+    "better_share_handler/conversations",
+  );
   static Stream<SharedMedia>? _sharedMediaStream;
 
   @override
@@ -73,21 +75,23 @@ class MethodChannelShareHandler extends ShareHandlerPlatform {
     required bool isGroup,
     required bool incoming,
   }) {
-    return conversationsChannel.invokeMethod<void>('recordMessage', <String, Object?>{
-      'conversationIdentifier': conversationIdentifier,
-      'conversationName': conversationName,
-      'imageFilePath': conversationImageFilePath,
-      'serviceName': serviceName,
-      'isGroup': isGroup,
-      'incoming': incoming,
-    });
+    return conversationsChannel
+        .invokeMethod<void>('recordMessage', <String, Object?>{
+          'conversationIdentifier': conversationIdentifier,
+          'conversationName': conversationName,
+          'imageFilePath': conversationImageFilePath,
+          'serviceName': serviceName,
+          'isGroup': isGroup,
+          'incoming': incoming,
+        });
   }
 
   @override
   Future<void> removeConversations(List<String> conversationIdentifiers) {
-    return conversationsChannel.invokeMethod<void>('removeConversations', <String, Object?>{
-      'conversationIdentifiers': conversationIdentifiers,
-    });
+    return conversationsChannel.invokeMethod<void>(
+      'removeConversations',
+      <String, Object?>{'conversationIdentifiers': conversationIdentifiers},
+    );
   }
 
   @override
@@ -102,11 +106,12 @@ class MethodChannelShareHandler extends ShareHandlerPlatform {
 
   @override
   Stream<SharedMedia> get sharedMediaStream {
-    _sharedMediaStream ??=
-        eventChannel.receiveBroadcastStream().map<SharedMedia>((dynamic event) {
-      final Map<dynamic, dynamic> map = event as Map<dynamic, dynamic>;
-      return SharedMedia.decode(map);
-    });
+    _sharedMediaStream ??= eventChannel
+        .receiveBroadcastStream()
+        .map<SharedMedia>((dynamic event) {
+          final Map<dynamic, dynamic> map = event as Map<dynamic, dynamic>;
+          return SharedMedia.decode(map);
+        });
 
     return _sharedMediaStream!;
   }

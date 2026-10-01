@@ -18,10 +18,13 @@ void main() {
     setUp(() {
       calls.clear();
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-          .setMockMethodCallHandler(MethodChannelShareHandler.conversationsChannel, (call) async {
-        calls.add(call);
-        return null;
-      });
+          .setMockMethodCallHandler(
+            MethodChannelShareHandler.conversationsChannel,
+            (call) async {
+              calls.add(call);
+              return null;
+            },
+          );
     });
 
     test('recordSentMessage sends an outgoing message', () async {
