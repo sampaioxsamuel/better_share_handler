@@ -1,25 +1,43 @@
 # better_share_handler
 
-A Flutter plugin for iOS and Android to handle incoming shared text/media, as well as add share to suggestions/shortcuts.
+[![pub package](https://img.shields.io/pub/v/better_share_handler.svg)](https://pub.dev/packages/better_share_handler)
 
-Maintained fork of [share_handler](https://pub.dev/packages/share_handler), originally created by [Shout](https://github.com/AboutShout/share_handler). Shipped as a single package with UIScene support, Swift Package Manager support and fixes for share delivery (including cold starts from the iOS share extension).
+Receive text, URLs, images, videos and files shared to your Flutter app from other apps, on iOS and Android, and show your app's conversations as direct share suggestions.
 
-## Migrating from share_handler
+**better_share_handler is an evolution of [share_handler](https://pub.dev/packages/share_handler)**, the plugin originally created by [Shout](https://github.com/AboutShout/share_handler). It keeps the same API and native setup, and builds on it with bug fixes, modern platform support and a simpler package layout. If you already use `share_handler`, migrating takes a few minutes: see [Migrating from share_handler](#migrating-from-share_handler).
 
-1. In `pubspec.yaml`, replace `share_handler` with `better_share_handler`.
-2. Replace `package:share_handler/share_handler.dart` imports with `package:better_share_handler/better_share_handler.dart`.
-3. In `ios/ShareExtension/ShareViewController.swift`, replace `import share_handler_ios_models` with `import better_share_handler_models`.
-4. CocoaPods: in the `ShareExtension` target of your `Podfile`, replace the `share_handler_ios_models` pod with the one shown in step 6 below, then run `pod install`.
-   Swift Package Manager: in Xcode, remove the `share-handler-ios-models` product from the ShareExtension target and add `better-share-handler-models` (see step 6).
-5. Android: no manifest changes are required.
+## What's improved over share_handler
+
+- **Shares work on real iOS devices.** Fixes the share extension cancelling every share on device (the app flashed and never opened), caused by `UserDefaults.synchronize()` returning `false` inside extensions.
+- **Reliable delivery.** The share that launched the app arrives once through `getInitialSharedMedia()`; shares received while the app runs arrive through `sharedMediaStream`, buffered until you start listening. No duplicates between the two.
+- **Safer iOS hand-off.** Callback URLs are validated, each share uses a one-time key, and the extension only finishes after the host app actually opened.
+- **Safer Android staging.** Attachments are staged atomically and queued events are bounded.
+- **Modern platforms.** UIScene lifecycle, Swift Package Manager and CocoaPods, privacy manifests, Android Gradle Plugin 9.
+- **One package.** Android, iOS and the Dart API ship together in `better_share_handler`: no federated sub-packages to keep in sync.
+
+## Platform support
+
+| Android | iOS |
+| :-----: | :-: |
+| ✅ | ✅ 14.0+ |
+
+Requires Flutter 3.44+ and Dart 3.12+.
 
 ## Installation
 
-First, add `better_share_handler` as a [dependency in your pubspec.yaml file](https://flutter.dev/using-packages/).
+```sh
+flutter pub add better_share_handler
+```
 
-### iOS
+Then follow the native setup for each platform below.
 
-1. Add the following to `<project root>/ios/Runner/Info.plist`. It registers your app to open via a deep link that will be launched from the Share Extension. Also, for sharing photos, you will need access to the photo library.
+## iOS setup
+
+On iOS, other apps share through a **Share Extension**. The extension saves the shared content to an App Group shared with your app, then opens your app through a custom URL scheme so your Dart code can read it.
+
+### 1. Runner `Info.plist`
+
+Add the following to `ios/Runner/Info.plist`. It registers the URL scheme the Share Extension uses to open your app and, for photos, asks for photo library access.
 
 ```xml
 <!-- Add for better_share_handler start -->
@@ -73,10 +91,13 @@ First, add `better_share_handler` as a [dependency in your pubspec.yaml file](ht
 <!-- Add for better_share_handler end -->
 ```
 
-2. Create Share Extension
-   - In Xcode, go to the menu and select File->New->Target and choose "Share Extension"
-   - Give it the name "ShareExtension" and save
-3. Make the following edits to `<project root>/ios/ShareExtension/Info.plist`.
+### 2. Create the Share Extension
+
+In Xcode, choose **File > New > Target**, pick **Share Extension** and name it `ShareExtension`.
+
+### 3. Share Extension `Info.plist`
+
+Replace the contents of `ios/ShareExtension/Info.plist`:
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
@@ -134,17 +155,24 @@ First, add `better_share_handler` as a [dependency in your pubspec.yaml file](ht
 </plist> 
 ```
 
-4. Add a group identifier to both the Runner and ShareExtension Targets
-   - In Xcode, select Runner -> Targets -> Runner -> Signing & Capabilities
-   - Click the '+' button and select 'App Groups'
-   - Add a new group (default is your bundle identifier prefixed by 'group.'. ex. 'group.com.example.app')
-   - Repeat those 3 steps inside of the 'ShareExtension' target adding/selecting the same group id
-5. (Optional) If you made a custom group identifier that isn't your bundle identifier prefixed by 'group.', make sure to add a custom build setting variable that is referenced in your shareExtension's info.plist file.
-   - Go to Targets -> ShareExtension -> Build Settings
-   - Click the '+' icon and select 'Add User-Defined Setting'
-   - Give it the key 'CUSTOM_GROUP_ID' and the value of the app group identifier that you gave to both targets in the previous step
-   - Repeat the above 2 steps for the 'Runner' target
-6. Add the following code inside `<project root>/ios/Podfile` within the `target 'Runner' do` block, and then run `pod install` inside of `<project root>/ios`.
+### 4. App Group
+
+Both targets must share the same App Group:
+
+1. Select **Runner > Signing & Capabilities**, click **+ Capability** and add **App Groups**.
+2. Add a group. By default the plugin expects your bundle identifier prefixed with `group.` (for example `group.com.example.app`).
+3. Repeat in the **ShareExtension** target, selecting the same group.
+
+**Custom group id (optional).** To use a different group, for example `group.myapp`:
+
+1. In **Build Settings** of both targets, add a User-Defined setting `CUSTOM_GROUP_ID` with the group id.
+2. Uncomment the `AppGroupId` key in both `Info.plist` files (steps 1 and 3).
+
+### 5. Link the extension module
+
+The extension uses the `better_share_handler_models` module.
+
+**CocoaPods:** add the `ShareExtension` target inside `target 'Runner' do` in `ios/Podfile`, then run `pod install` in `ios/`:
 
 ```ruby
 target 'Runner' do
@@ -162,9 +190,11 @@ target 'Runner' do
 end
 ```
 
-   If your app uses Swift Package Manager instead of CocoaPods, run `flutter build ios` once, then in Xcode select the ShareExtension target -> General -> Frameworks and Libraries, click '+', choose "Add Other..." -> "Add Package Dependency..." -> "Add Local..." and pick `ios/Flutter/ephemeral/Packages/.packages/better_share_handler`. Add the `better-share-handler-models` product to the ShareExtension target.
+**Swift Package Manager:** run `flutter build ios` once. Then, in Xcode, select the **ShareExtension** target > **General > Frameworks and Libraries**, click **+**, choose **Add Other... > Add Package Dependency... > Add Local...**, pick `ios/Flutter/ephemeral/Packages/.packages/better_share_handler` and add the `better-share-handler-models` product.
 
-7. In Xcode, replace the contents of ShareExtension/ShareViewController.swift with the following code. The share extension doesn't launch a UI of its own, instead it serializes the shared content/media and saves it to the groups shared preferences, then opens a deep link into the full app so your flutter/dart code can then read the serialized data and handle it accordingly. 
+### 6. Share view controller
+
+Replace the contents of `ios/ShareExtension/ShareViewController.swift`. The extension has no UI of its own: it saves the shared content and opens your app.
 
 ```swift
 import better_share_handler_models
@@ -172,9 +202,11 @@ import better_share_handler_models
 class ShareViewController: ShareHandlerIosViewController {}
 ```
 
-### Android
+## Android setup
 
-1. Edit your Android Manifest file, located in `<project root>/android/app/src/main/AndroidManifest.xml` and add/uncomment the intent filters and meta data that you want to support:
+### 1. Intent filters
+
+In `android/app/src/main/AndroidManifest.xml`, add the intent filters for the content types you want to receive:
 
 ```xml
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
@@ -183,7 +215,6 @@ class ShareViewController: ShareHandlerIosViewController {}
  <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
 
   <application
-        android:name="io.flutter.app.FlutterApplication"
         ...
         >
 
@@ -252,9 +283,11 @@ class ShareViewController: ShareHandlerIosViewController {}
 </manifest>
 ```
 
-2. (Optional) If you want to prevent incoming shares from opening a new activity each time, add the attribute `android:launchMode="singleTask"` to your MainActivity intent inside your AndroidManifest.xml file.
-3. (Optional) Add required file to support share suggestions/shortcuts in to your app.
-   - Create the file `<project root>/android/app/src/main/res/xml/share_targets.xml` with the following contents, replacing `{your.package.identifier}` with your package identifier (ex. com.example.app):
+To avoid opening a new activity for every incoming share, set `android:launchMode="singleTask"` on `MainActivity`.
+
+### 2. Direct share suggestions (optional)
+
+To show conversations registered with `recordSentMessage` in the share sheet, create `android/app/src/main/res/xml/share_targets.xml`, replacing `{your.package.identifier}` with your application id:
 
 ```xml
 <?xml version="1.0" encoding="utf-8"?>
@@ -266,106 +299,67 @@ class ShareViewController: ShareHandlerIosViewController {}
 </shortcuts>
 ```
 
-## Example
+## Usage
 
 ```dart
-import 'dart:io';
-
-import 'package:flutter/material.dart';
-import 'dart:async';
-
 import 'package:better_share_handler/better_share_handler.dart';
 
-void main() {
-  runApp(const MyApp());
+final handler = ShareHandler.instance;
+
+// Share that launched the app (delivered once).
+final SharedMedia? initial = await handler.getInitialSharedMedia();
+if (initial != null) {
+  handleShare(initial);
+  await handler.resetInitialSharedMedia();
 }
 
-class MyApp extends StatefulWidget {
-  const MyApp({Key? key}) : super(key: key);
+// Shares received while the app is running.
+handler.sharedMediaStream.listen(handleShare);
 
-  @override
-  State<MyApp> createState() => _MyAppState();
-}
-
-class _MyAppState extends State<MyApp> {
-  @override
-  void initState() {
-    super.initState();
-    initPlatformState();
-  }
-
-  SharedMedia? media;
-
-  // Platform messages are asynchronous, so we initialize in an async method.
-  Future<void> initPlatformState() async {
-    final handler = ShareHandlerPlatform.instance;
-    media = await handler.getInitialSharedMedia();
-
-    handler.sharedMediaStream.listen((SharedMedia media) {
-      if (!mounted) return;
-      setState(() {
-        this.media = media;
-      });
-    });
-    if (!mounted) return;
-
-    setState(() {
-      // _platformVersion = platformVersion;
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      home: Scaffold(
-        appBar: AppBar(
-          title: const Text('Share Handler'),
-        ),
-        body: Center(
-          child: ListView(
-            children: <Widget>[
-              Text("Shared to conversation identifier: ${media?.conversationIdentifier}"),
-              const SizedBox(height: 10),
-              Text("Shared text: ${media?.content}"),
-              const SizedBox(height: 10),
-              Text("Shared files: ${media?.attachments?.length}"),
-              ...(media?.attachments ?? []).map((attachment) {
-                final path = attachment?.path;
-                if (path != null && attachment?.type == SharedAttachmentType.image) {
-                  return Column(
-                    children: [
-                      ElevatedButton(
-                        onPressed: () {
-                          ShareHandlerPlatform.instance.recordSentMessage(
-                            conversationIdentifier: "custom-conversation-identifier",
-                            conversationName: "John Doe",
-                            conversationImageFilePath: path,
-                            serviceName: "custom-service-name",
-                          );
-                        },
-                        child: const Text("Record message"),
-                      ),
-                      const SizedBox(height: 10),
-                      Image.file(File(path)),
-                    ],
-                  );
-                } else {
-                  return Text("${attachment?.type} Attachment: ${attachment?.path}");
-                }
-              }),
-            ],
-          ),
-        ),
-      ),
-    );
+void handleShare(SharedMedia media) {
+  print('Text: ${media.content}');
+  for (final attachment in media.attachments ?? <SharedAttachment?>[]) {
+    print('${attachment?.type}: ${attachment?.path}');
   }
 }
 ```
 
-## Attributions
+Attachment paths point to staging files. Use them right away, or copy them to your own storage if you need them later.
 
-`better_share_handler` is a fork of [share_handler](https://github.com/AboutShout/share_handler) by [Shout](https://github.com/AboutShout), released under the MIT License. Thanks to the original authors and contributors.
+### Direct share suggestions
 
-From the original README:
+Record a conversation so the system share sheet can suggest it as a target:
 
-Special thanks to the contributors of the receive_sharing_intent package from which I garnered a lot of code/logic and built thereon - https://github.com/KasemJaffer/receive_sharing_intent. It seemed to not be maintained and not responsive to issues/feature requests, hence the new package.
+```dart
+await ShareHandler.instance.recordSentMessage(
+  conversationIdentifier: 'conversation-42',
+  conversationName: 'John Doe',
+  conversationImageFilePath: '/path/to/avatar.png', // optional
+  serviceName: 'my-service', // optional
+);
+```
+
+When the user shares to that suggestion, `SharedMedia.conversationIdentifier` carries the identifier.
+
+A complete app is available in [`example/`](example).
+
+## Migrating from share_handler
+
+1. In `pubspec.yaml`, replace `share_handler` with `better_share_handler: ^1.0.0`. Remove any direct dependency on `share_handler_ios`, `share_handler_android` or `share_handler_platform_interface`.
+2. Replace `package:share_handler/share_handler.dart` imports with `package:better_share_handler/better_share_handler.dart`.
+3. In `ios/ShareExtension/ShareViewController.swift`, replace `import share_handler_ios_models` with `import better_share_handler_models`.
+4. **CocoaPods:** in the `ShareExtension` target of your `Podfile`, replace the `share_handler_ios_models` pod with the one in [iOS step 5](#5-link-the-extension-module), then run `pod install`.
+   **Swift Package Manager:** remove the `share-handler-ios-models` product from the ShareExtension target and add `better-share-handler-models`.
+5. Android needs no changes.
+
+Class names (`ShareHandler`, `ShareHandlerPlatform`, `ShareHandlerIosViewController`, `SharedMedia`...) are unchanged. Behavior differences to review:
+
+- The share that launched the app is no longer also emitted on `sharedMediaStream`; read it with `getInitialSharedMedia()`.
+- `recordSentMessage()` now throws a `PlatformException` when the iOS intent donation fails.
+- `ShareHandlerApi` (generated code) is no longer exported; use `ShareHandler.instance`.
+
+## Credits
+
+better_share_handler builds on [share_handler](https://github.com/AboutShout/share_handler) by [Shout](https://github.com/AboutShout) and its contributors, which in turn built on [receive_sharing_intent](https://github.com/KasemJaffer/receive_sharing_intent). Thank you to everyone who worked on them.
+
+Released under the [MIT License](LICENSE).
