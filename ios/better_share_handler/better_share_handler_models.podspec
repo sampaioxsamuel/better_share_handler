@@ -7,9 +7,9 @@ Pod::Spec.new do |s|
   s.license          = { :file => '../../LICENSE' }
   s.author           = { 'Samuel' => 'sampaioxsamuel@gmail.com' }
   s.source           = { :path => '.' }
-  s.source_files     = '../better_share_handler/Sources/better_share_handler_models/**/*.swift'
+  s.source_files     = 'Sources/better_share_handler_models/**/*.swift'
   s.resource_bundles = {
-    'better_share_handler_models_privacy' => ['../better_share_handler/Sources/better_share_handler_models/PrivacyInfo.xcprivacy']
+    'better_share_handler_models_privacy' => ['Sources/better_share_handler_models/PrivacyInfo.xcprivacy']
   }
   s.platform = :ios, '14.0'
   s.pod_target_xcconfig = { 'DEFINES_MODULE' => 'YES', 'EXCLUDED_ARCHS[sdk=iphonesimulator*]' => 'i386' }

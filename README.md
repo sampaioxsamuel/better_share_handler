@@ -183,7 +183,7 @@ target 'Runner' do
   # better_share_handler addition start
   target 'ShareExtension' do
     inherit! :search_paths
-    pod "better_share_handler_models", :path => ".symlinks/plugins/better_share_handler/ios/Models"
+    pod "better_share_handler_models", :path => ".symlinks/plugins/better_share_handler/ios/better_share_handler"
   end
   # better_share_handler addition end
 end

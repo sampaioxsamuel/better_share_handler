@@ -1,3 +1,7 @@
+# Unreleased
+
+- iOS (CocoaPods): fix `better_share_handler_models` building with no source files, which made `import better_share_handler_models` fail in the Share Extension. The podspec moved from `ios/Models/` to `ios/better_share_handler/` so its `source_files` stay inside the pod root. Update the Podfile line to `:path => ".symlinks/plugins/better_share_handler/ios/better_share_handler"`.
+
 # 1.1.0
 
 Direct share suggestions now follow the platform guidelines and can be managed from Dart.
