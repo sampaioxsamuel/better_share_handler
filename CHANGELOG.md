@@ -1,6 +1,6 @@
-# Unreleased
+# 1.1.1
 
-- iOS (CocoaPods): fix `better_share_handler_models` building with no source files, which made `import better_share_handler_models` fail in the Share Extension. The podspec moved from `ios/Models/` to `ios/better_share_handler/` so its `source_files` stay inside the pod root. Update the Podfile line to `:path => ".symlinks/plugins/better_share_handler/ios/better_share_handler"`.
+- iOS (CocoaPods): fix `better_share_handler_models` building with no source files, which made `import better_share_handler_models` fail in the Share Extension. The podspec moved from `ios/Models/` to `ios/better_share_handler/` so its `source_files` stay inside the pod root. Update the Podfile line to `:path => ".symlinks/plugins/better_share_handler/ios/better_share_handler"`. Fixed by @84rrry.
 
 # 1.1.0
 
