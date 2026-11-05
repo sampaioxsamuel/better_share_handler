@@ -191,7 +191,7 @@ end
 
 **Swift Package Manager:** run `flutter build ios` once. Then, in Xcode, select the **ShareExtension** target > **General > Frameworks and Libraries**, click **+**, choose **Add Other... > Add Package Dependency... > Add Local...** and pick the `better_share_handler` folder inside `ios/Flutter/ephemeral/Packages/.packages/`. Add the `better-share-handler-models` product.
 
-Flutter names that folder after the plugin directory, which includes the version when installed from pub.dev (for example `better_share_handler-1.1.0`). After upgrading the package, run `flutter build ios` and point the ShareExtension's local package to the new folder.
+Flutter names that folder after the plugin directory, which includes the version when installed from pub.dev (for example `better_share_handler-1.1.1`). After upgrading the package, run `flutter build ios` and point the ShareExtension's local package to the new folder.
 
 ### 6. Share view controller
 
@@ -369,7 +369,7 @@ A complete app is available in [`example/`](example).
 
 ## Migrating from share_handler
 
-1. In `pubspec.yaml`, replace `share_handler` with `better_share_handler: ^1.1.0`. Remove any direct dependency on `share_handler_ios`, `share_handler_android` or `share_handler_platform_interface`.
+1. In `pubspec.yaml`, replace `share_handler` with `better_share_handler: ^1.1.1`. Remove any direct dependency on `share_handler_ios`, `share_handler_android` or `share_handler_platform_interface`.
 2. Replace `package:share_handler/share_handler.dart` imports with `package:better_share_handler/better_share_handler.dart`.
 3. In `ios/ShareExtension/ShareViewController.swift`, replace `import share_handler_ios_models` with `import better_share_handler_models`.
 4. **CocoaPods:** in the `ShareExtension` target of your `Podfile`, replace the `share_handler_ios_models` pod with the one in [iOS step 5](#5-link-the-extension-module), then run `pod install`.
